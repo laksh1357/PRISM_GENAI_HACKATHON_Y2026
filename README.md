@@ -69,6 +69,18 @@ Interactive API documentation is available at
 The demo endpoint is `POST /run`. It is intentionally limited to the checked-in
 demo repository.
 
+## Public Render deployment
+
+The repository includes [`render.yaml`](./render.yaml) for a two-service Render
+deployment. In Render, choose **New → Blueprint**, connect this GitHub
+repository, and select the `main` branch. Render will create:
+
+- `alphar-backend.onrender.com` — FastAPI service
+- `alphar-frontend.onrender.com` — Streamlit dashboard
+
+Set `LLM_API_KEY` and `LLM_MODEL` in the backend service environment if you want
+live GenAI analysis. Do not commit those values.
+
 ## Team
 
 **VITV_ALPHAR_1**

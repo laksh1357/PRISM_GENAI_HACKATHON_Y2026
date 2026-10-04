@@ -1,7 +1,10 @@
+import os
+
 import httpx
 import streamlit as st
 
 st.set_page_config(page_title="ALPHAR", page_icon="🔧", layout="wide")
+backend_url = os.getenv("ALPHAR_API_URL", "http://127.0.0.1:8000").rstrip("/")
 
 st.markdown(
     """
@@ -34,7 +37,7 @@ if st.button("🚀 RUN ALPHAR", type="primary", use_container_width=True):
     st.session_state.pop("result", None)
     with st.spinner("Running the real analysis and verification loop..."):
         try:
-            response = httpx.post("http://127.0.0.1:8000/run", timeout=60)
+            response = httpx.post(f"{backend_url}/run", timeout=60)
             response.raise_for_status()
             st.session_state["result"] = response.json()
         except httpx.HTTPError as exc:

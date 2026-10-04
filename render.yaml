@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: alphar-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: LLM_API_URL
+        value: https://api.openai.com/v1/chat/completions
+
+  - type: web
+    name: alphar-frontend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run frontend/app.py --server.address 0.0.0.0 --server.port $PORT
+    envVars:
+      - key: ALPHAR_API_URL
+        value: https://alphar-backend.onrender.com
