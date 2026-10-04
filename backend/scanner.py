@@ -45,9 +45,13 @@ def scan_repository(root: Path) -> RepositoryAnalysis:
     issues: list[CodeIssue] = []
 
     for path in sorted(root.rglob("*.py")):
-        if any(part.startswith(".") or part == "__pycache__" for part in path.parts):
+        relative_path = path.relative_to(root)
+        if any(
+            part.startswith(".") or part == "__pycache__"
+            for part in relative_path.parts
+        ):
             continue
-        relative = _relative(path, root)
+        relative = relative_path.as_posix()
         files.append(relative)
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
@@ -82,4 +86,3 @@ def scan_repository(root: Path) -> RepositoryAnalysis:
                 )
 
     return RepositoryAnalysis(files, functions, classes, issues)
-
