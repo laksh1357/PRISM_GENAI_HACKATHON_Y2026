@@ -10,11 +10,11 @@ Repository → Analyze → Detect Bug → Explain → Generate Test
 
 The current demo is intentionally restricted to the included `demo_repo`. It
 uses Python AST analysis to find the calculator's floor-division bug, runs the
-real pytest suite before and after the patch, applies a guarded source change,
-and displays the actual unified diff. If `LLM_API_KEY` and `LLM_MODEL` are
-configured, the agent also attempts an OpenAI-compatible LLM request for its
-explanation; otherwise it uses the deterministic AST finding rather than
-fabricating an LLM response.
+real pytest suite before and after the patch, sends the actual source and
+failing test output to an OpenAI-compatible LLM when configured, applies a
+guarded source change, and displays the actual unified diff. If LLM settings
+are unavailable or the request fails, the UI explicitly labels the
+deterministic AST fallback; it never claims that an LLM ran.
 
 ## Project structure
 
@@ -68,6 +68,23 @@ Interactive API documentation is available at
 
 The demo endpoint is `POST /run`. It is intentionally limited to the checked-in
 demo repository.
+
+## Team
+
+**VITV_ALPHAR_1**
+
+| Member | Registration No. | Role |
+| --- | --- | --- |
+| Lakshya Singh | 24BDS0054 | Team Lead / AI & Backend |
+| Hardik Vikas Jain | 24BCI0294 | AI / Backend |
+| Rupanshu | 24BCI0308 | Frontend / Integration |
+| Apoorv Sharma | 24BCT0243 | Testing / Engineering |
+
+**College:** VIT Vellore
+
+**Hackathon:** Samsung PRISM | Gen AI Hackathon 2026
+
+**Required Git tag:** `PRISM_GENAI_HACKATHON_Y2026`
 
 ## Start the frontend
 

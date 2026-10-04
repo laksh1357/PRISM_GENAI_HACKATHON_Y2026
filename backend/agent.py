@@ -5,8 +5,11 @@ import os
 from dataclasses import dataclass
 
 import httpx
+from dotenv import load_dotenv
 
 from .scanner import CodeIssue, RepositoryAnalysis
+
+load_dotenv()
 
 
 @dataclass
@@ -16,6 +19,7 @@ class AgentPlan:
     proposed_fix: str
     replacement: str
     source: str
+    ai_error: str | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -24,6 +28,7 @@ class AgentPlan:
             "proposed_fix": self.proposed_fix,
             "replacement": self.replacement,
             "source": self.source,
+            "ai_error": self.ai_error,
         }
 
 
@@ -36,11 +41,16 @@ def _local_plan(issue: CodeIssue) -> AgentPlan:
         ),
         proposed_fix="Use true division (`/`) so averages preserve fractional values.",
         replacement="/",
-        source="local AST reasoning",
+        source="deterministic fallback",
+        ai_error="LLM_API_KEY and LLM_MODEL are not configured; used AST evidence instead.",
     )
 
 
-def create_plan(analysis: RepositoryAnalysis) -> AgentPlan:
+def create_plan(
+    analysis: RepositoryAnalysis,
+    source_code: str,
+    test_output: str,
+) -> AgentPlan:
     if not analysis.issues:
         raise ValueError("No supported issue was detected in the repository.")
     issue = analysis.issues[0]
@@ -51,9 +61,14 @@ def create_plan(analysis: RepositoryAnalysis) -> AgentPlan:
         return _local_plan(issue)
 
     prompt = (
-        "Analyze this AST finding. Return JSON with root_cause, proposed_fix, "
-        "and replacement. The replacement must be exactly one character. "
-        f"Finding: {json.dumps(issue.__dict__)}"
+        "You are the AI Bug Hunter in a software engineering agent. Analyze the "
+        "actual Python source, AST finding, and pytest output below. Return only "
+        "valid JSON with keys issue, severity, affected_file, affected_function, "
+        "root_cause, recommended_fix, replacement. replacement must be exactly "
+        "the safe operator / for this demo. Do not invent test results.\n\n"
+        f"AST finding: {json.dumps(issue.__dict__)}\n"
+        f"Source:\n{source_code}\n"
+        f"Pytest output:\n{test_output}"
     )
     try:
         response = httpx.post(
@@ -79,6 +94,7 @@ def create_plan(analysis: RepositoryAnalysis) -> AgentPlan:
             replacement=replacement,
             source=f"LLM ({model})",
         )
-    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return _local_plan(issue)
-
+    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        fallback = _local_plan(issue)
+        fallback.ai_error = f"LLM request failed ({exc.__class__.__name__}); used AST fallback."
+        return fallback

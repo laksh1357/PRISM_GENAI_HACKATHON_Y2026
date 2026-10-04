@@ -13,8 +13,10 @@ def apply_fix(repository: Path, plan: AgentPlan) -> dict:
         raise ValueError("Refusing to patch a file outside the demo repository.")
 
     before = target.read_text(encoding="utf-8")
-    old_expression = "total // len(values)"
-    new_expression = f"total {plan.replacement} len(values)"
+    old_expression = plan.issue.evidence
+    if plan.replacement not in {"/"}:
+        raise ValueError("Refusing to apply an unapproved code replacement.")
+    new_expression = old_expression.replace("//", plan.replacement, 1)
     if old_expression not in before:
         raise ValueError("Expected vulnerable expression was not found; refusing to patch.")
     after = before.replace(old_expression, new_expression, 1)
@@ -28,4 +30,3 @@ def apply_fix(repository: Path, plan: AgentPlan) -> dict:
         )
     )
     return {"file": plan.issue.file, "before": before, "after": after, "diff": diff}
-

@@ -9,7 +9,9 @@ from pathlib import Path
 class CodeIssue:
     file: str
     line: int
+    function: str
     category: str
+    severity: str
     title: str
     explanation: str
     evidence: str
@@ -60,7 +62,9 @@ def scan_repository(root: Path) -> RepositoryAnalysis:
                 CodeIssue(
                     relative,
                     exc.lineno or 1,
+                    "<module>",
                     "syntax",
+                    "HIGH",
                     "Syntax error",
                     "Python could not parse this file.",
                     str(exc),
@@ -68,17 +72,32 @@ def scan_repository(root: Path) -> RepositoryAnalysis:
             )
             continue
 
+        function_ranges = [
+            (node.lineno, getattr(node, "end_lineno", node.lineno), node.name)
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        ]
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 functions.append(f"{relative}:{node.name}")
             elif isinstance(node, ast.ClassDef):
                 classes.append(f"{relative}:{node.name}")
             elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.FloorDiv):
+                function = next(
+                    (
+                        name
+                        for start, end, name in function_ranges
+                        if start <= node.lineno <= end
+                    ),
+                    "<module>",
+                )
                 issues.append(
                     CodeIssue(
                         relative,
                         node.lineno,
+                        function,
                         "logic",
+                        "HIGH",
                         "Unexpected floor division",
                         "Floor division truncates fractional results and is suspicious in a calculator average.",
                         ast.unparse(node),
